@@ -1,2 +1,2 @@
-# CompileTimeObfuscator
-Compile time obfuscator
+# cpp-obfuscator
+C++ implementation of compile time obfuscator
