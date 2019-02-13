@@ -1,0 +1,2 @@
+# CompileTimeObfuscator
+Compile time obfuscator
