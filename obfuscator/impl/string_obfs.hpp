@@ -42,13 +42,6 @@ namespace obfs {
                               std::forward<D>(decoder),
                               std::make_index_sequence<len>());
     }
-
-    template <size_t len, typename E, typename D>
-    inline char const* string(char const (&str)[len],
-                              E&& encoder,
-                              D&& decoder) {
-        return make_string(str, std::forward<E>(encoder), std::forward<D>(decoder)).decode();
-    }
 }
 
 #endif
