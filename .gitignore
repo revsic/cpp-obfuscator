@@ -1,1 +1,13 @@
+#editor
+.vscode
+
+#build
 build
+
+# cl with debug option
+*.ilk
+*.obj
+*.pdb
+
+# sample program
+*.exe
