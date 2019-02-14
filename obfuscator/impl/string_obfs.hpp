@@ -4,16 +4,13 @@
 #include <utility>
 
 namespace obfs {
-    template <size_t size, typename D>
+    template <size_t size, char(*encoder)(char), char(*decoder)(char)>
     class String {
     public:
-        template <typename E, typename Ds, size_t... Idx>
+        template <size_t... Idx>
         constexpr String(char const* str,
-                         E&& encoder,
-                         Ds&& decoder,
                          std::index_sequence<Idx...>):
-            str{ encoder(str[Idx])... },
-            decoder(std::forward<Ds>(decoder)) {
+            str{ encoder(str[Idx])... } {
             // Do Nothing
         }
 
@@ -30,17 +27,11 @@ namespace obfs {
 
     private:
         mutable char str[size];
-        D decoder;
     };
 
-    template <size_t size, typename E, typename D>
-    constexpr auto make_string(char const (&str)[size],
-                               E&& encoder,
-                               D&& decoder) {
-        return String<size, D>(str,
-                               std::forward<E>(encoder),
-                               std::forward<D>(decoder),
-                               std::make_index_sequence<size>());
+    template <char(*encoder)(char), char(*decoder)(char), size_t size>
+    constexpr auto make_string(char const (&str)[size]) {
+        return String<size, encoder, decoder>(str, std::make_index_sequence<size>());
     }
 }
 
