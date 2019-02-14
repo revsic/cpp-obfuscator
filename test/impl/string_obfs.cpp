@@ -1,14 +1,13 @@
 #include <string_obfs.hpp>
 #include <catch2/catch.hpp>
 
-TEST_CASE("xor test", "[obfs::String]") {
-    auto xor = [](char key) constexpr {
-        return [=](char chr) constexpr {
-            return static_cast<char>(key ^ chr);
-        };
-    };
+template <char Key>
+constexpr char xor(char value) {
+    return value ^ Key;
+}
 
+TEST_CASE("xor test", "[obfs::String]") {
     REQUIRE(
-        obfs::make_string("Hello World !", xor(0x20), xor(0x20)).decode()
+        obfs::make_string<xor<0x50>, xor<0x50>>("Hello World !").decode()
         == std::string_view("Hello World !"));
 }
