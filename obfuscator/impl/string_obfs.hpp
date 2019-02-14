@@ -8,8 +8,8 @@ class StringObfs {
 public:
     template <typename E, typename Ds, size_t... Idx>
     constexpr StringObfs(char const* str,
-                          E&& encoder,
-                          Ds&& decoder,
+                         E&& encoder,
+                         Ds&& decoder,
                          std::index_sequence<Idx...>):
         str{ encoder(str[Idx])... },
         decoder(std::forward<Ds>(decoder)) {
@@ -38,7 +38,7 @@ constexpr auto make_stringobfs(char const (&str)[len],
                                D&& decoder) {
     return StringObfs<len, D>(str,
                               std::forward<E>(encoder),
-                              std::forward<D>(decoder), 
+                              std::forward<D>(decoder),
                               std::make_index_sequence<len>());
 }
 
