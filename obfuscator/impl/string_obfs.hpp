@@ -33,14 +33,14 @@ namespace obfs {
         D decoder;
     };
 
-    template <size_t len, typename E, typename D>
-    constexpr auto make_string(char const (&str)[len],
+    template <size_t size, typename E, typename D>
+    constexpr auto make_string(char const (&str)[size],
                                E&& encoder,
                                D&& decoder) {
-        return String<len, D>(str,
-                              std::forward<E>(encoder),
-                              std::forward<D>(decoder),
-                              std::make_index_sequence<len>());
+        return String<size, D>(str,
+                               std::forward<E>(encoder),
+                               std::forward<D>(decoder),
+                               std::make_index_sequence<size>());
     }
 }
 
