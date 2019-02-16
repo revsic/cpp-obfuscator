@@ -19,8 +19,8 @@ namespace obfs {
         }
 
         inline char const* decode() const {
-            for (size_t i = 0; i < size; ++i) {
-                str[i] = decoder(str[i]);
+            for (char& chr : str) {
+                chr = decoder(chr);
             }
             return str;
         }
