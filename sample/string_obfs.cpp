@@ -8,6 +8,6 @@ constexpr char xor(char c) {
 }
 
 int main() {
-    constexpr auto str = obfs::make_string<xor<0x20>, xor<0x20>>("Hello World !");
+    constexpr auto str = obfs::make_string<xor<0x50>, xor<0x50>>("Hello World !");
     std::cout << str.decode() << std::endl;
 }
