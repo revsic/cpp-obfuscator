@@ -7,17 +7,17 @@
 
 
 namespace obfs {
-    template <size_t size, char(*encoder)(char), char(*decoder)(char)>
+    template <std::size_t size, char(*encoder)(char), char(*decoder)(char)>
     class String {
     public:
-        template <size_t... Idx>
+        template <std::size_t... Idx>
         constexpr String(char const* str,
                          std::index_sequence<Idx...>):
             str{ encoder(str[Idx])... } {
             // Do Nothing
         }
 
-        constexpr size_t len() const {
+        constexpr std::size_t len() const {
             return size;
         }
 
@@ -32,7 +32,7 @@ namespace obfs {
         mutable char str[size];
     };
 
-    template <char(*encoder)(char), char(*decoder)(char), size_t size>
+    template <char(*encoder)(char), char(*decoder)(char), std::size_t size>
     constexpr auto make_string(char const (&str)[size]) {
         return String<size, encoder, decoder>(str, std::make_index_sequence<size>());
     }
