@@ -17,5 +17,5 @@ RUN cmake .. && \
     make -j `nproc`
 
 WORKDIR /app
-RUN python -m script.merge && \
-    python -m script.string_obfs_tester ./sample/build/string_obfs "Hello World !"
+RUN python3 -m script.merge && \
+    python3 -m script.string_obfs_tester ./sample/build/string_obfs "Hello World !"
