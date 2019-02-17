@@ -1,4 +1,4 @@
-#include "../obfuscator/obfuscator.hpp"
+#include "../obfuscator.hpp"
 
 #include <iostream>
 
