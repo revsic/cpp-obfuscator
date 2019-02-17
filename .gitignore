@@ -1,7 +1,7 @@
-#editor
+# editor
 .vscode
 
-#build
+# build
 build
 
 # cl with debug option
@@ -11,3 +11,6 @@ build
 
 # sample program
 *.exe
+
+# python cache
+__pycache__
