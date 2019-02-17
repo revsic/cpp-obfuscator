@@ -1,0 +1,10 @@
+jobs:
+- job: ${{ parameters.name }}
+  pool:
+    vmImage: ${{ parameters.vmImage }}
+  steps:
+  - script: git submodule update --init
+    displayName: initialize submodule
+
+  - script: docker build -f script/Dockerfile.bionic -t cpp_concurrency .
+    displayName: run docker-bionic

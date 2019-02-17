@@ -1,0 +1,40 @@
+jobs:
+- job: ${{ parameters.name }}
+  pool:
+    vmImage: ${{ parameters.vmImage }}
+  steps:
+# Initialize
+  - script: git submodule update --init
+    displayName: Initialize submodule
+# UnitTest
+  - task: CMake@1
+    inputs:
+      workingDirectory: ./test/build
+      cmakeArgs: ../
+    displayName: CMake unittest
+
+  - script: cd ./test/build && make;
+    displayName: GNU Make unittest
+
+  - script: ./test/build/unittest
+    displayName: Run unittest
+# Additional tests
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: 3.6
+      architecture: 'x64'
+
+  - script: python -m script.merge
+    displayName: Remerge obfuscator.hpp
+
+  - task: CMake@1
+    inputs:
+      workingDirectory: ./sample/build
+      cmakeArgs: ../
+    displayName: CMake sample
+
+  - script: cd ./sample/build && make;
+    displayName: GNU Make sample
+
+  - script: python -m script.string_obfs_tester ./sample/build/string_obfs "Hello World !"
+    displayName: String OBFS test
