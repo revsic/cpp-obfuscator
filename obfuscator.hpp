@@ -1,13 +1,117 @@
 #ifndef OBFUSCATOR_HPP
 #define OBFUSCATOR_HPP
 
+#include <type_traits>
 #include <utility>
 
+#define COMPILE_TIME_RANDOM
+#define OBFS_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
+#define COMPILE_TIME_SEQUENCE
 #define STRING_OBFS
 
 
 namespace obfs {
-    template <std::size_t size, char(*encoder)(char), char(*decoder)(char)>
+    constexpr char TIME[] = __TIME__;
+    constexpr int digit(char c) {
+        return c - '0';
+    }
+    constexpr int SEED = digit(TIME[7]) +
+                         digit(TIME[6]) * 10 +
+                         digit(TIME[4]) * 60 +
+                         digit(TIME[3]) * 600 +
+                         digit(TIME[1]) * 3600 +
+                         digit(TIME[0]) * 36000;
+
+    using size_t = decltype(sizeof(void*));
+
+    template <size_t Idx>
+    struct Xorshiftplus {
+        using prev = Xorshiftplus<Idx - 1>;
+
+        constexpr static size_t update() {
+            constexpr size_t x = prev::state0 ^ (prev::state0 << 23);
+            constexpr size_t y = prev::state1;
+            return x ^ y ^ (x >> 17) ^ (y >> 26);
+        }
+
+        constexpr static size_t state0 = prev::state1;
+        constexpr static size_t state1 = update();
+
+        constexpr static size_t value = state0 + state1;
+    };
+
+    template <>
+    struct Xorshiftplus<0> {
+        constexpr static size_t state0 = static_cast<size_t>(SEED);
+        constexpr static size_t state1 = static_cast<size_t>(SEED << 1);
+        constexpr static size_t value = state0 + state1;
+    };
+
+    template <size_t Idx, size_t Mod>
+    constexpr size_t RAND_VAL = Xorshiftplus<Idx>::value % Mod;
+}
+
+
+namespace obfs {
+    template <typename T, T... Others>
+    struct Sequence;
+
+    template <typename T, T Val, T... Others>
+    struct Sequence<T, Val, Others...> {
+        using value_type = T;
+        constexpr static T value = Val;
+
+        using now = Sequence<T, Val, Others...>;
+        using next = Sequence<T, Others...>;
+
+        template <std::size_t Idx>
+        using get = std::conditional_t<Idx == 0, now, typename next::get<Idx - 1>>; 
+    };
+
+    template <typename T, T Val>
+    struct Sequence<T, Val> {
+        using value_type = T;
+        constexpr static T value = Val;
+
+        template <std::size_t Idx>
+        using get = std::enable_if_t<Idx == 0, Sequence<T, Val>>;
+    };
+
+    template <typename T, typename... Ts>
+    struct TypeSeq {
+        using type = T;
+        using next = TypeSeq<Ts...>;
+
+        // template <std::size_t Idx>
+        // using get = std::conditional_t<Idx == 0, type, next::get<Idx - 1>>;
+    };
+
+    template <typename T>
+    struct TypeSeq<T> {
+        using type = T;
+
+        // template <std::size_t Idx>
+        // using get = std::enable_if_t<Idx == 0, type>;
+    };
+
+    template <typename... T>
+    struct SeqPack {
+        constexpr static std::size_t size = sizeof...(T);
+
+        template <typename T, std::size_t Idx>
+        using single_elem = Sequence<typename T::value_type, T::get<Idx>::value>;
+
+        template <std::size_t Idx>
+        using get = TypeSeq<single_elem<T, Idx>...>;
+    };
+}
+
+
+namespace obfs {
+    using Encoder = char(*)(char);
+    using Decoder = char(*)(char);
+
+    template <std::size_t size, Encoder encoder, Decoder decoder>
     class String {
     public:
         template <std::size_t... Idx>
@@ -32,9 +136,30 @@ namespace obfs {
         mutable char str[size];
     };
 
-    template <char(*encoder)(char), char(*decoder)(char), std::size_t size>
+    template <Encoder encoder, Decoder decoder, std::size_t size>
     constexpr auto make_string(char const (&str)[size]) {
         return String<size, encoder, decoder>(str, std::make_index_sequence<size>());
+    }
+
+    template <Encoder... encoders>
+    using encoder_seq = Sequence<Encoder, encoders...>;
+
+    template <Decoder... decoders>
+    using decoder_seq = Sequence<Decoder, decoders...>;
+
+    template <typename EncoderSeq, typename DecoderSeq>
+    using make_table = SeqPack<EncoderSeq, DecoderSeq>;
+
+    template <typename Table, std::size_t size>
+    constexpr auto make_string(char const (&str)[size]) {
+        using pair = Table::get<OBFS_RAND_VAL(Table::size)>;
+        // constexpr Encoder encoder = pair::get<0>::value;
+        // constexpr Decoder decoder = pair::get<1>::value;
+
+        constexpr Encoder encoder = pair::type::value;
+        constexpr Decoder decoder = pair::next::type::value;
+
+        return make_string<encoder, decoder>(str);
     }
 }
 
