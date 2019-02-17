@@ -3,11 +3,29 @@
 #include <iostream>
 
 template <char key>
-constexpr char enc_xor(char c) {
+constexpr char xor_(char c) {
     return c ^ key;
 }
 
+template <char Key>
+constexpr char add(char c) {
+    return c + Key;
+}
+
+template <char(*f)(char), char(*g)(char)>
+constexpr char comp(char c) {
+    return f(g(c));
+}
+
 int main() {
-    constexpr auto str = obfs::make_string<enc_xor<0x50>, enc_xor<0x50>>("Hello World !");
+    using table = obfs::make_table<
+        obfs::encoder_seq<xor_<0x50>, add<10>, comp<xor_<0x50>, add<10>>>,
+        obfs::decoder_seq<xor_<0x50>, add<-10>, comp<add<-10>, xor_<0x50>>>>;
+
+    std::cout << __TIME__ << std::endl;
+    std::cout << obfs::SEED << std::endl;
+    std::cout << obfs::RAND_VAL<__LINE__, 3> << std::endl;
+
+    constexpr auto str = obfs::make_string<table>("Hello World !");
     std::cout << str.decode() << std::endl;
 }
