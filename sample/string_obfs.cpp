@@ -22,10 +22,6 @@ int main() {
         obfs::encoder_seq<xor_<0x50>, add<10>, comp<xor_<0x50>, add<10>>>,
         obfs::decoder_seq<xor_<0x50>, add<-10>, comp<add<-10>, xor_<0x50>>>>;
 
-    std::cout << __TIME__ << std::endl;
-    std::cout << obfs::SEED << std::endl;
-    std::cout << obfs::RAND_VAL<__LINE__, 3> << std::endl;
-
     constexpr auto str = obfs::make_string<table>("Hello World !");
     std::cout << str.decode() << std::endl;
 }
