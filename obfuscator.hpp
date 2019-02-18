@@ -53,28 +53,29 @@ namespace obfs {
 
 
 namespace obfs {
-    template <typename T, T... Others>
-    struct Sequence;
-
-    template <typename T, T Val, T... Others>
-    struct Sequence<T, Val, Others...> {
+    template <typename T, T Val>
+    struct TypeVal {
         using value_type = T;
         constexpr static T value = Val;
+    };
 
-        using now = Sequence<T, Val, Others...>;
+    struct Nothing {};
+
+    template <typename T, T Val, T... Others>
+    struct Sequence {
+        using value = TypeVal<T, Val>;
         using next = Sequence<T, Others...>;
 
         template <std::size_t Idx>
-        using get = std::conditional_t<Idx == 0, now, typename next::get<Idx - 1>>; 
+        using index = std::conditional_t<Idx == 0, value, typename next::template index<Idx - 1>>;
     };
 
     template <typename T, T Val>
     struct Sequence<T, Val> {
-        using value_type = T;
-        constexpr static T value = Val;
+        using value = TypeVal<T, Val>;
 
         template <std::size_t Idx>
-        using get = std::enable_if_t<Idx == 0, Sequence<T, Val>>;
+        using index = std::conditional_t<Idx == 0, value, Nothing>;
     };
 
     template <typename T, typename... Ts>
@@ -82,27 +83,27 @@ namespace obfs {
         using type = T;
         using next = TypeSeq<Ts...>;
 
-        // template <std::size_t Idx>
-        // using get = std::conditional_t<Idx == 0, type, next::get<Idx - 1>>;
+        template <std::size_t Idx>
+        using index = std::conditional_t<Idx == 0, type, typename next::template index<Idx - 1>>;
     };
 
     template <typename T>
     struct TypeSeq<T> {
         using type = T;
 
-        // template <std::size_t Idx>
-        // using get = std::enable_if_t<Idx == 0, type>;
+        template <std::size_t Idx>
+        using index = std::conditional_t<Idx == 0, type, Nothing>;
     };
 
     template <typename... T>
     struct SeqPack {
         constexpr static std::size_t size = sizeof...(T);
 
-        template <typename T, std::size_t Idx>
-        using single_elem = Sequence<typename T::value_type, T::get<Idx>::value>;
+        template <std::size_t Idx, typename U>
+        using getter = typename U::template index<Idx>;
 
         template <std::size_t Idx>
-        using get = TypeSeq<single_elem<T, Idx>...>;
+        using index = TypeSeq<getter<Idx, T>...>;
     };
 }
 
@@ -152,12 +153,9 @@ namespace obfs {
 
     template <typename Table, std::size_t size>
     constexpr auto make_string(char const (&str)[size]) {
-        using pair = Table::get<OBFS_RAND_VAL(Table::size)>;
-        // constexpr Encoder encoder = pair::get<0>::value;
-        // constexpr Decoder decoder = pair::get<1>::value;
-
-        constexpr Encoder encoder = pair::type::value;
-        constexpr Decoder decoder = pair::next::type::value;
+        using pair = Table::index<OBFS_RAND_VAL(Table::size)>;
+        constexpr Encoder encoder = pair::index<0>::value;
+        constexpr Decoder decoder = pair::index<1>::value;
 
         return make_string<encoder, decoder>(str);
     }
