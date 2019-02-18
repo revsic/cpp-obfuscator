@@ -51,12 +51,9 @@ namespace obfs {
 
     template <typename Table, std::size_t size>
     constexpr auto make_string(char const (&str)[size]) {
-        using pair = Table::get<OBFS_RAND_VAL(Table::size)>;
-        // constexpr Encoder encoder = pair::get<0>::value;
-        // constexpr Decoder decoder = pair::get<1>::value;
-
-        constexpr Encoder encoder = pair::type::value;
-        constexpr Decoder decoder = pair::next::type::value;
+        using pair = Table::index<OBFS_RAND_VAL(Table::size)>;
+        constexpr Encoder encoder = pair::index<0>::value;
+        constexpr Decoder decoder = pair::index<1>::value;
 
         return make_string<encoder, decoder>(str);
     }
