@@ -4,34 +4,29 @@
 #include <type_traits>
 
 namespace obfs {
-    template <typename T, T Val, T... Others>
-    struct Sequence {
+    template <typename T, T Val>
+    struct TypeVal {
         using value_type = T;
         constexpr static T value = Val;
+    };
 
+    struct Nothing {};
+
+    template <typename T, T Val, T... Others>
+    struct Sequence {
+        using value = TypeVal<T, Val>;
         using next = Sequence<T, Others...>;
 
         template <std::size_t Idx>
-        constexpr static T get() {
-            if constexpr (Idx == 0) {
-                return value;
-            }
-            else {
-                return next::get<Idx - 1>();
-            }
-        }
+        using index = std::conditional_t<Idx == 0, value, typename next::template index<Idx - 1>>;
     };
 
     template <typename T, T Val>
     struct Sequence<T, Val> {
-        using value_type = T;
-        constexpr static T value = Val;
+        using value = TypeVal<T, Val>;
 
         template <std::size_t Idx>
-        constexpr static T get() {
-            static_assert(Idx == 0, "Couldn't get proper value from sequence");
-            return value;
-        }
+        using index = std::conditional_t<Idx == 0, value, Nothing>;
     };
 
     template <typename T, typename... Ts>
@@ -39,24 +34,27 @@ namespace obfs {
         using type = T;
         using next = TypeSeq<Ts...>;
 
-        // template <std::size_t Idx>
-        // using get = std::conditional_t<Idx == 0, type, next::get<Idx - 1>>;
+        template <std::size_t Idx>
+        using index = std::conditional_t<Idx == 0, type, typename next::template index<Idx - 1>>;
     };
 
     template <typename T>
     struct TypeSeq<T> {
         using type = T;
 
-        // template <std::size_t Idx>
-        // using get = std::enable_if_t<Idx == 0, type>;
+        template <std::size_t Idx>
+        using index = std::conditional_t<Idx == 0, type, Nothing>;
     };
 
     template <typename... T>
     struct SeqPack {
         constexpr static std::size_t size = sizeof...(T);
 
+        template <std::size_t Idx, typename U>
+        using getter = typename U::template index<Idx>;
+
         template <std::size_t Idx>
-        using get = TypeSeq<Sequence<typename T::value_type, T::get<Idx>>...>;
+        using index = TypeSeq<getter<Idx, T>...>;
     };
 }
 
