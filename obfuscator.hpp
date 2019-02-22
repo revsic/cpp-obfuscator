@@ -5,9 +5,10 @@
 #include <utility>
 
 #define COMPILE_TIME_RANDOM
-#define OBFS_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
+#define MAKE_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
 #define COMPILE_TIME_SEQUENCE
 #define OBFS_STRING
+#define MAKE_STRING(Table, String) obfs::make_string<Table>(String).decode()
 
 
 namespace obfs {
@@ -153,7 +154,7 @@ namespace obfs {
 
     template <typename Table, std::size_t size>
     constexpr auto make_string(char const (&str)[size]) {
-        using pair = typename Table::template index<OBFS_RAND_VAL(Table::size)>;
+        using pair = typename Table::template index<MAKE_RAND_VAL(Table::size)>;
         constexpr Encoder encoder = pair::template index<0>::value;
         constexpr Decoder decoder = pair::template index<1>::value;
 
