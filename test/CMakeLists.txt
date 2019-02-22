@@ -8,7 +8,7 @@ file(GLOB test_files
 )
 
 add_executable(unittest main.cpp ${test_files})
-target_include_directories(unittest PRIVATE ../obfuscator/impl)
+target_include_directories(unittest PRIVATE ../obfuscator)
 
 add_subdirectory(../external/Catch2 external)
 target_link_libraries(unittest Catch2::Catch2)
