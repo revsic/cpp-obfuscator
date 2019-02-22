@@ -8,7 +8,7 @@
 #define MAKE_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
 #define COMPILE_TIME_SEQUENCE
 #define OBFS_STRING
-#define MAKE_STRING(Table, String) obfs::make_string<Table>(String).decode()
+#define MAKE_STRING(Var, Table, String) constexpr auto Var = obfs::make_string<Table>(String);
 
 
 namespace obfs {
@@ -121,10 +121,6 @@ namespace obfs {
                          std::index_sequence<Idx...>):
             str{ encoder(str[Idx])... } {
             // Do Nothing
-        }
-
-        constexpr std::size_t len() const {
-            return size;
         }
 
         inline char const* decode() const {

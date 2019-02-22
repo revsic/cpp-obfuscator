@@ -20,10 +20,6 @@ namespace obfs {
             // Do Nothing
         }
 
-        constexpr std::size_t len() const {
-            return size;
-        }
-
         inline char const* decode() const {
             for (char& chr : str) {
                 chr = decoder(chr);
@@ -59,6 +55,6 @@ namespace obfs {
     }
 }
 
-#define MAKE_STRING(Table, String) obfs::make_string<Table>(String).decode()
+#define MAKE_STRING(Var, Table, String) constexpr auto Var = obfs::make_string<Table>(String);
 
 #endif
