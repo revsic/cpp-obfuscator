@@ -240,7 +240,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         dirname = sys.argv[2]
     else:
-        dirname = './obfuscator/impl'
+        dirname = './obfuscator/obfs'
 
     merged = merge(dirname)
     write_hpp(outfile, merged)
