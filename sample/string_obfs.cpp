@@ -22,6 +22,6 @@ int main() {
         obfs::encoder_seq<xor_<0x50>, add<10>, comp<xor_<0x50>, add<10>>>,
         obfs::decoder_seq<xor_<0x50>, add<-10>, comp<add<-10>, xor_<0x50>>>>;
 
-    MAKE_STRING(str, table, "Hello World !");
+    MAKE_STRING(str, "Hello World !", table);
     std::cout << str.decode() << std::endl;
 }

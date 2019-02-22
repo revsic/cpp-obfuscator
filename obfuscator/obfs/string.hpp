@@ -55,6 +55,6 @@ namespace obfs {
     }
 }
 
-#define MAKE_STRING(Var, Table, String) constexpr auto Var = obfs::make_string<Table>(String);
+#define MAKE_STRING(Var, String, ...) constexpr auto Var = obfs::make_string<__VA_ARGS__>(String);
 
 #endif

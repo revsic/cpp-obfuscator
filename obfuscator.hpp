@@ -8,7 +8,7 @@
 #define MAKE_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
 #define COMPILE_TIME_SEQUENCE
 #define OBFS_STRING
-#define MAKE_STRING(Var, Table, String) constexpr auto Var = obfs::make_string<Table>(String);
+#define MAKE_STRING(Var, String, ...) constexpr auto Var = obfs::make_string<__VA_ARGS__>(String);
 
 
 namespace obfs {
