@@ -1,4 +1,4 @@
-#include <string_obfs.hpp>
+#include <obfs/string.hpp>
 #include <catch2/catch.hpp>
 
 template <char Key>
