@@ -42,6 +42,6 @@ namespace obfs {
     constexpr size_t RAND_VAL = Xorshiftplus<Idx>::value % Mod;
 }
 
-#define OBFS_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
+#define MAKE_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
 
 #endif
