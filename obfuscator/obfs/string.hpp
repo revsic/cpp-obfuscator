@@ -1,5 +1,5 @@
-#ifndef STRING_OBFS
-#define STRING_OBFS
+#ifndef OBFS_STRING
+#define OBFS_STRING
 
 #include "random.hpp"
 #include "sequence.hpp"
