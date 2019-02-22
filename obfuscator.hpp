@@ -7,7 +7,7 @@
 #define COMPILE_TIME_RANDOM
 #define OBFS_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
 #define COMPILE_TIME_SEQUENCE
-#define STRING_OBFS
+#define OBFS_STRING
 
 
 namespace obfs {

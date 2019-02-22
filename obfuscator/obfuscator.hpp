@@ -1,8 +1,8 @@
 #ifndef OBFUSCATOR
 #define OBFUSCATOR
 
-#include "impl/random.hpp"
-#include "impl/sequence.hpp"
-#include "impl/string.hpp"
+#include "obfs/random.hpp"
+#include "obfs/sequence.hpp"
+#include "obfs/string.hpp"
 
 #endif
