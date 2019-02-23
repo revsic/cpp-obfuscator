@@ -5,8 +5,6 @@
 #include <utility>
 
 #define OBFS_FINITE_STATE_MACHINE
-#define STATE(Name) struct Name {};
-#define EVENT(Name) struct Name {};
 #define COMPILE_TIME_RANDOM
 #define MAKE_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
 #define COMPILE_TIME_SEQUENCE
@@ -15,66 +13,76 @@
 
 
 namespace obfs {
-    template <typename Event, typename State>
+    constexpr bool FreeAction() {
+        return false;
+    }
+
+    template <typename Event, typename State, bool(*Action)() = FreeAction>
     struct Next {
         using event = Event;
         using state = State;
+        constexpr static bool(*action)() = Action;
     };
 
-    struct FalseType {};
+    struct Pass {};
 
-    template <typename IfFalse, typename T, typename... Ts>
+    template <typename IfAllPass, typename T, typename... Ts>
     struct First {
         using type = std::conditional_t<
-            std::is_same_v<T, FalseType>,
-            typename First<IfFalse, Ts...>::type,
+            std::is_same_v<T, Pass>,
+            typename First<IfAllPass, Ts...>::type,
             T>;
     };
 
-    template <typename IfFalse, typename T>
-    struct First<IfFalse, T> {
+    template <typename IfAllPass, typename T>
+    struct First<IfAllPass, T> {
         using type = std::conditional_t<
-            std::is_same_v<T, FalseType>,
-            IfFalse,
+            std::is_same_v<T, Pass>,
+            IfAllPass,
             T>;
     };
+
+    struct None {};
 
     template <typename State, typename... Nexts>
     struct Stage {
+        using state = State;
 
         template <typename Cond, typename Event>
         using act = std::conditional_t<
-            std::is_same_v<typename Cond::event, Event>,
-            typename Cond::state,
-            FalseType>;
+            std::is_same_v<typename Cond::event, Event>, Cond, Pass>;
 
         template <typename Event>
-        using next = typename First<State, act<Nexts, Event>...>::type;
+        using next = typename First<Next<None, State>, act<Nexts, Event>...>::type;
     };
 
-    template <typename... Specs>
+    template <typename State, typename... Specs>
     struct StateMachine {
+        template <typename ST>
+        using find = std::conditional_t<
+            std::is_same_v<typename ST::state, State>, ST, Pass>;
 
+        using stage = typename First<Pass, find<Specs>...>::type;
+
+        template <typename Event>
+        using next = typename stage::template next<Event>;
+
+        template <typename Event>
+        using next_s = StateMachine<typename next<Event>::state, Specs...>;
+
+        template <typename Event, typename... Others>
+        constexpr static void run() {
+            if (next<Event>::action()) {
+                return;
+            }
+            next_s<Event>::template run<Others...>();
+        }
+
+        template <typename Event>
+        constexpr static void run() {
+            next<Event>::action();
+        }
     };
-
-
-    STATE(Final);
-
-    EVENT(none);
-    EVENT(Trigger);
-
-    STATE(state1); STATE(state2); STATE(state3); STATE(state4); STATE(state5);
-    EVENT(event1); EVENT(event2); EVENT(event3); EVENT(event4); EVENT(event5);
-
-    using machine = StateMachine<
-        Stage<state1, Next<event5, state2>,
-                      Next<event1, state3>>,
-        Stage<state2, Next<event2, state4>>,
-        Stage<state3, Next<none, state3>>,
-        Stage<state4, Next<event4, state1>,
-                      Next<event3, state5>>,
-        Stage<state5, Next<Trigger, Final>>>;
-
 }
 
 
