@@ -28,7 +28,7 @@ int main() {
                       Next<event3 , state5>>,
         Stage<state5, Next<Trigger, Final, action>>>;
 
-    // machine::run<event5, event2, event3, Trigger>();
+    machine::run<event5, event2, event3, Trigger>();
 
     return 0;
 }
