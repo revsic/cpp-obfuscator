@@ -4,128 +4,12 @@
 #include <type_traits>
 #include <utility>
 
+#define COMPILE_TIME_SEQUENCE
 #define OBFS_FINITE_STATE_MACHINE
 #define COMPILE_TIME_RANDOM
 #define MAKE_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
-#define COMPILE_TIME_SEQUENCE
 #define OBFS_STRING
 #define MAKE_STRING(Var, String, ...) constexpr auto Var = obfs::make_string<__VA_ARGS__>(String);
-
-
-namespace obfs {
-    constexpr bool FreeAction() {
-        return false;
-    }
-
-    template <typename Event, typename State, bool(*Action)() = FreeAction>
-    struct Next {
-        using event = Event;
-        using state = State;
-        constexpr static bool(*action)() = Action;
-    };
-
-    struct Pass {};
-
-    template <typename IfAllPass, typename T, typename... Ts>
-    struct First {
-        using type = std::conditional_t<
-            std::is_same_v<T, Pass>,
-            typename First<IfAllPass, Ts...>::type,
-            T>;
-    };
-
-    template <typename IfAllPass, typename T>
-    struct First<IfAllPass, T> {
-        using type = std::conditional_t<
-            std::is_same_v<T, Pass>,
-            IfAllPass,
-            T>;
-    };
-
-    struct None {};
-
-    template <typename State, typename... Nexts>
-    struct Stage {
-        using state = State;
-
-        template <typename Cond, typename Event>
-        using act = std::conditional_t<
-            std::is_same_v<typename Cond::event, Event>, Cond, Pass>;
-
-        template <typename Event>
-        using next = typename First<Next<None, State>, act<Nexts, Event>...>::type;
-    };
-
-    template <typename State, typename... Specs>
-    struct StateMachine {
-        template <typename ST>
-        using find = std::conditional_t<
-            std::is_same_v<typename ST::state, State>, ST, Pass>;
-
-        using stage = typename First<Pass, find<Specs>...>::type;
-
-        template <typename Event>
-        using next = typename stage::template next<Event>;
-
-        template <typename Event>
-        using next_s = StateMachine<typename next<Event>::state, Specs...>;
-
-        template <typename Event, typename... Others>
-        constexpr static void run() {
-            if (next<Event>::action()) {
-                return;
-            }
-            next_s<Event>::template run<Others...>();
-        }
-
-        template <typename Event>
-        constexpr static void run() {
-            next<Event>::action();
-        }
-    };
-}
-
-
-namespace obfs {
-    constexpr char TIME[] = __TIME__;
-    constexpr int digit(char c) {
-        return c - '0';
-    }
-    constexpr int SEED = digit(TIME[7]) +
-                         digit(TIME[6]) * 10 +
-                         digit(TIME[4]) * 60 +
-                         digit(TIME[3]) * 600 +
-                         digit(TIME[1]) * 3600 +
-                         digit(TIME[0]) * 36000;
-
-    using size_t = decltype(sizeof(void*));
-
-    template <size_t Idx>
-    struct Xorshiftplus {
-        using prev = Xorshiftplus<Idx - 1>;
-
-        constexpr static size_t update() {
-            constexpr size_t x = prev::state0 ^ (prev::state0 << 23);
-            constexpr size_t y = prev::state1;
-            return x ^ y ^ (x >> 17) ^ (y >> 26);
-        }
-
-        constexpr static size_t state0 = prev::state1;
-        constexpr static size_t state1 = update();
-
-        constexpr static size_t value = state0 + state1;
-    };
-
-    template <>
-    struct Xorshiftplus<0> {
-        constexpr static size_t state0 = static_cast<size_t>(SEED);
-        constexpr static size_t state1 = static_cast<size_t>(SEED << 1);
-        constexpr static size_t value = state0 + state1;
-    };
-
-    template <size_t Idx, size_t Mod>
-    constexpr size_t RAND_VAL = Xorshiftplus<Idx>::value % Mod;
-}
 
 
 namespace obfs {
@@ -197,6 +81,120 @@ namespace obfs {
         template <std::size_t Idx>
         using index = TypeSeq<getter<Idx, T>...>;
     };
+}
+
+
+namespace obfs {
+    constexpr bool FreeAction() {
+        return false;
+    }
+
+    template <typename Event, typename State, bool(*Action)() = FreeAction>
+    struct Next {
+        using event = Event;
+        using state = State;
+        constexpr static bool(*action)() = Action;
+    };
+
+    struct Pass {};
+
+    template <typename IfAllPass, typename T, typename... Ts>
+    struct First {
+        using type = std::conditional_t<
+            std::is_same_v<T, Pass>,
+            typename First<IfAllPass, Ts...>::type,
+            T>;
+    };
+
+    template <typename IfAllPass, typename T>
+    struct First<IfAllPass, T> {
+        using type = std::conditional_t<
+            std::is_same_v<T, Pass>,
+            IfAllPass,
+            T>;
+    };
+
+    struct None {};
+
+    template <typename State, typename... Nexts>
+    struct Stage {
+        using state = State;
+
+        template <typename Cond, typename Event>
+        using act = std::conditional_t<
+            std::is_same_v<typename Cond::event, Event>, Cond, Pass>;
+
+        template <typename Event>
+        using next = typename First<Next<None, State>, act<Nexts, Event>...>::type;
+    };
+
+    template <typename State, typename... Specs>
+    struct StateMachine {
+        template <typename ST>
+        using find = std::conditional_t<
+            std::is_same_v<typename ST::state, State>, ST, Pass>;
+
+        using stage = typename First<Pass, find<Specs>...>::type;
+
+        template <typename Event>
+        using next = typename stage::template next<Event>;
+
+        template <typename Event>
+        using next_s = StateMachine<typename next<Event>::state, Specs...>;
+
+        template <typename Event, typename... Others>
+        constexpr static void run() {
+            if (next<Event>::action()) {
+                return;
+            }
+
+            if constexpr (sizeof...(Others) > 0) {
+                next_s<Event>::template run<Others...>();
+            }
+        }
+    };
+}
+
+
+namespace obfs {
+    constexpr char TIME[] = __TIME__;
+    constexpr int digit(char c) {
+        return c - '0';
+    }
+    constexpr int SEED = digit(TIME[7]) +
+                         digit(TIME[6]) * 10 +
+                         digit(TIME[4]) * 60 +
+                         digit(TIME[3]) * 600 +
+                         digit(TIME[1]) * 3600 +
+                         digit(TIME[0]) * 36000;
+
+    using size_t = decltype(sizeof(void*));
+
+    template <size_t Idx>
+    struct Xorshiftplus {
+        using prev = Xorshiftplus<Idx - 1>;
+
+        constexpr static size_t update() {
+            constexpr size_t x = prev::state0 ^ (prev::state0 << 23);
+            constexpr size_t y = prev::state1;
+            return x ^ y ^ (x >> 17) ^ (y >> 26);
+        }
+
+        constexpr static size_t state0 = prev::state1;
+        constexpr static size_t state1 = update();
+
+        constexpr static size_t value = state0 + state1;
+    };
+
+    template <>
+    struct Xorshiftplus<0> {
+        constexpr static size_t state0 = static_cast<size_t>(SEED);
+        constexpr static size_t state1 = static_cast<size_t>(SEED << 1);
+        constexpr static size_t value = state0 + state1;
+    };
+
+    template <size_t Idx, size_t Mod>
+    constexpr size_t RAND_VAL = Xorshiftplus<Idx>::value % Mod;
 }
 
 

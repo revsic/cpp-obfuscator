@@ -66,12 +66,9 @@ namespace obfs {
             if (next<Event>::action()) {
                 return;
             }
-            next_s<Event>::template run<Others...>();
-        }
-
-        template <typename Event>
-        constexpr static void run() {
-            next<Event>::action();
+            if constexpr (sizeof...(Others) > 0) {
+                next_s<Event>::template run<Others...>();
+            }
         }
     };
 }
