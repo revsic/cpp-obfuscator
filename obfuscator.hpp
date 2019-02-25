@@ -128,6 +128,30 @@ namespace obfs {
         using next = typename First<Next<None, State>, act<Nexts, Event>...>::type;
     };
 
+    template <typename Machine, typename... Events>
+    struct MachineExecutor;
+
+    template <typename Machine, typename Event, typename... Others>
+    struct MachineExecutor<Machine, Event, Others...> {
+        using next = typename Machine::template next<Event>;
+        using next_s = typename Machine::template next_s<Event>;
+
+        constexpr static void run() {
+            if (next::action()) {
+                return;
+            }
+            MachineExecutor<next_s, Others...>::run();
+        }
+    };
+
+    template <typename Machine, typename Event>
+    struct MachineExecutor<Machine, Event> {
+        using next = typename Machine::template next<Event>;
+        constexpr static void run() {
+            next::action();
+        }
+    };
+
     template <typename State, typename... Specs>
     struct StateMachine {
         template <typename ST>
@@ -142,15 +166,10 @@ namespace obfs {
         template <typename Event>
         using next_s = StateMachine<typename next<Event>::state, Specs...>;
 
-        template <typename Event, typename... Others>
+        template <typename... Events>
         constexpr static void run() {
-            if (next<Event>::action()) {
-                return;
-            }
-
-            if constexpr (sizeof...(Others) > 0) {
-                next_s<Event>::template run<Others...>();
-            }
+            using self = StateMachine<State, Specs...>;
+            MachineExecutor<self, Events...>::run();
         }
     };
 }
