@@ -55,19 +55,25 @@ namespace obfs {
         using next = typename Machine::template next<Event>;
         using next_s = typename Machine::template next_s<Event>;
 
-        constexpr static void run() {
-            if (next::action()) {
-                return;
+        constexpr static auto run() {
+            if (std::is_same_v<next, None> || next::action()) {
+                return Machine{};
             }
-            MachineExecutor<next_s, Others...>::run();
+            return MachineExecutor<next_s, Others...>::run();
         }
     };
 
     template <typename Machine, typename Event>
     struct MachineExecutor<Machine, Event> {
         using next = typename Machine::template next<Event>;
-        constexpr static void run() {
+        using next_s = typename Machine::template next_s<Event>;
+
+        constexpr static auto run() {
+            if (std::is_same_v<next, None>) {
+                return Machine{};
+            }
             next::action();
+            return next_s{};
         }
     };
 
@@ -77,18 +83,24 @@ namespace obfs {
         using find = std::conditional_t<
             std::is_same_v<typename ST::state, State>, ST, Pass>;
 
-        using stage = typename First<Pass, find<Specs>...>::type;
+        using stage = typename First<None, find<Specs>...>::type;
 
         template <typename Event>
-        using next = typename stage::template next<Event>;
+        using next = std::conditional_t<
+            std::is_same_v<stage, None>,
+            None,
+            typename stage::template next<Event>>;
 
         template <typename Event>
-        using next_s = StateMachine<typename next<Event>::state, Specs...>;
+        using next_s = std::conditional_t<
+            std::is_same_v<next<Event>, None>,
+            None,
+            StateMachine<typename next<Event>::state, Specs...>>;
 
         template <typename... Events>
-        constexpr static void run() {
+        constexpr static auto run() {
             using self = StateMachine<State, Specs...>;
-            MachineExecutor<self, Events...>::run();
+            return MachineExecutor<self, Events...>::run();
         }
     };
 }
