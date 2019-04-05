@@ -4,17 +4,6 @@
 #include <type_traits>
 
 namespace obfs {
-    constexpr bool FreeAction() {
-        return false;
-    }
-
-    template <typename Event, typename State, bool(*Action)() = FreeAction>
-    struct Next {
-        using event = Event;
-        using state = State;
-        constexpr static bool(*action)() = Action;
-    };
-
     struct Pass {};
 
     template <typename IfAllPass, typename T, typename... Ts>
@@ -33,74 +22,70 @@ namespace obfs {
             T>;
     };
 
+    constexpr void FreeAction() {}
+
+    template <typename Event, typename State, void(*Action)() = FreeAction>
+    struct Next {
+        using event = Event;
+        using state = State;
+        constexpr static void(*action)() = Action;
+    };
+
     struct None {};
 
     template <typename State, typename... Nexts>
     struct Stage {
         using state = State;
 
-        template <typename Cond, typename Event>
+        template <typename NextInfo, typename Event>
         using act = std::conditional_t<
-            std::is_same_v<typename Cond::event, Event>, Cond, Pass>;
+            std::is_same_v<typename NextInfo::event, Event>, NextInfo, Pass>;
 
         template <typename Event>
-        using next = typename First<Next<None, State>, act<Nexts, Event>...>::type;
+        using next = typename First<None, act<Nexts, Event>...>::type;
     };
 
-    template <typename Machine, typename... Events>
-    struct MachineExecutor;
-
-    template <typename Machine, typename Event, typename... Others>
-    struct MachineExecutor<Machine, Event, Others...> {
-        using next = typename Machine::template next<Event>;
-        using next_s = typename Machine::template next_s<Event>;
-
-        constexpr static auto run() {
-            if (std::is_same_v<next, None> || next::action()) {
-                return Machine{};
-            }
-            return MachineExecutor<next_s, Others...>::run();
-        }
-    };
-
-    template <typename Machine, typename Event>
-    struct MachineExecutor<Machine, Event> {
-        using next = typename Machine::template next<Event>;
-        using next_s = typename Machine::template next_s<Event>;
-
-        constexpr static auto run() {
-            if (std::is_same_v<next, None>) {
-                return Machine{};
-            }
-            next::action();
-            return next_s{};
-        }
-    };
-
-    template <typename State, typename... Specs>
+    template <typename... Specs>
     struct StateMachine {
-        template <typename ST>
-        using find = std::conditional_t<
-            std::is_same_v<typename ST::state, State>, ST, Pass>;
+        template <typename State, typename StageT>
+        using filter = std::conditional_t<
+            std::is_same_v<typename StageT::state, State>, StageT, Pass>;
 
-        using stage = typename First<None, find<Specs>...>::type;
+        template <typename State>
+        using find = typename First<None, filter<State, Specs>...>::type;
+
+        template <typename Stage_, typename Event>
+        struct next {
+            using type = typename Stage_::template next<Event>;
+        };
 
         template <typename Event>
-        using next = std::conditional_t<
-            std::is_same_v<stage, None>,
-            None,
-            typename stage::template next<Event>>;
+        struct next<None, Event> {
+            using type = None;
+        };
 
-        template <typename Event>
-        using next_s = std::conditional_t<
-            std::is_same_v<next<Event>, None>,
-            None,
-            StateMachine<typename next<Event>::state, Specs...>>;
+        template <typename State, typename Event>
+        using next_t = typename next<find<State>, Event>::type;
 
-        template <typename... Events>
-        constexpr static auto run() {
-            using self = StateMachine<State, Specs...>;
-            return MachineExecutor<self, Events...>::run();
+        template <typename State>
+        struct invoker {
+            static auto action() {
+                State::action();
+                return State{};
+            }
+        };
+
+        template <>
+        struct invoker<None> {
+            static auto action() {
+                return None{};
+            }
+        };
+
+        template <typename State, typename Event>
+        static auto run(State state, Event event) {
+            using next_state = next_t<State, Event>;
+            return invoker<next_state>::action();
         }
     };
 }
