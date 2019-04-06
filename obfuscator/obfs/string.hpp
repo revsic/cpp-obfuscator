@@ -45,9 +45,15 @@ namespace obfs {
     template <typename EncoderSeq, typename DecoderSeq>
     using make_table = SeqPack<EncoderSeq, DecoderSeq>;
 
+    template <Encoder encoder, Decoder decoder>
+    using encoder_pair = Sequence<Encoder, encoder, decoder>;
+
+    template <typename... Seq>
+    using make_pair_table = TypeSeq<Seq...>;
+
     template <typename Table, std::size_t size>
-    constexpr auto make_string(char const (&str)[size]) {
-        using pair = typename Table::template index<MAKE_RAND_VAL(Table::elem_size)>;
+    constexpr auto make_string(char const(&str)[size]) {
+        using pair = typename Table::template index<MAKE_RAND_VAL(Table::size)>;
         constexpr Encoder encoder = pair::template index<0>::value;
         constexpr Decoder decoder = pair::template index<1>::value;
 
