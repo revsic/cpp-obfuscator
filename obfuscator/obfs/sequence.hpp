@@ -72,6 +72,24 @@ namespace obfs {
         template <std::size_t Idx>
         using index = TypeSeq<getter<Idx, T>...>;
     };
+
+    struct Pass {};
+
+    template <typename IfAllPass, typename T, typename... Ts>
+    struct First {
+        using type = std::conditional_t<
+            std::is_same_v<T, Pass>,
+            typename First<IfAllPass, Ts...>::type,
+            T>;
+    };
+
+    template <typename IfAllPass, typename T>
+    struct First<IfAllPass, T> {
+        using type = std::conditional_t<
+            std::is_same_v<T, Pass>,
+            IfAllPass,
+            T>;
+    };
 }
 
 #endif

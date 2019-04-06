@@ -1,28 +1,12 @@
 #ifndef OBFS_FINITE_STATE_MACHINE
 #define OBFS_FINITE_STATE_MACHINE
 
+#include "sequence.hpp"
+
 #include <type_traits>
 
 namespace obfs {
-    struct Pass {};
-
-    template <typename IfAllPass, typename T, typename... Ts>
-    struct First {
-        using type = std::conditional_t<
-            std::is_same_v<T, Pass>,
-            typename First<IfAllPass, Ts...>::type,
-            T>;
-    };
-
-    template <typename IfAllPass, typename T>
-    struct First<IfAllPass, T> {
-        using type = std::conditional_t<
-            std::is_same_v<T, Pass>,
-            IfAllPass,
-            T>;
-    };
-
-    constexpr void FreeAction() {}
+    void FreeAction() {}
 
     template <typename Event, typename State, void(*Action)() = FreeAction>
     struct Next {
