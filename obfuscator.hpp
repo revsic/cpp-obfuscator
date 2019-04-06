@@ -126,6 +126,31 @@ namespace obfs {
         using next = typename First<None, act<Nexts, Event>...>::type;
     };
 
+    template <typename Stage_, typename Event>
+    struct next_stage {
+        using type = typename Stage_::template next<Event>;
+    };
+
+    template <typename Event>
+    struct next_stage<None, Event> {
+        using type = None;
+    };
+
+    template <typename State>
+    struct action_invoker {
+        static auto action() {
+            State::action();
+            return typename State::state{};
+        }
+    };
+
+    template <>
+    struct action_invoker<None> {
+        static auto action() {
+            return None{};
+        }
+    };
+
     template <typename... Specs>
     struct StateMachine {
         template <typename State, typename StageT>
@@ -135,38 +160,13 @@ namespace obfs {
         template <typename State>
         using find = typename First<None, filter<State, Specs>...>::type;
 
-        template <typename Stage_, typename Event>
-        struct next {
-            using type = typename Stage_::template next<Event>;
-        };
-
-        template <typename Event>
-        struct next<None, Event> {
-            using type = None;
-        };
-
         template <typename State, typename Event>
-        using next_t = typename next<find<State>, Event>::type;
-
-        template <typename State>
-        struct invoker {
-            static auto action() {
-                State::action();
-                return State::state{};
-            }
-        };
-
-        template <>
-        struct invoker<None> {
-            static auto action() {
-                return None{};
-            }
-        };
+        using next_t = typename next_stage<find<State>, Event>::type;
 
         template <typename State, typename Event>
         static auto run(State state, Event event) {
             using next_state = next_t<std::decay_t<State>, std::decay_t<Event>>;
-            return invoker<next_state>::action();
+            return action_invoker<next_state>::action();
         }
     };
 }
