@@ -11,32 +11,38 @@ EVENT(Trigger);
 STATE(state1); STATE(state2); STATE(state3); STATE(state4); STATE(state5);
 EVENT(event1); EVENT(event2); EVENT(event3); EVENT(event4); EVENT(event5);
 
-void action() {
-    std::cout << "Trigged" << std::endl;
-}
+struct Action {
+    static bool trigged;
+    static void action() {
+        trigged = true;
+        std::cout << "Trigged" << std::endl;
+    }
+};
+bool Action::trigged = true;
 
-int back = 0;
-
-void dummy1() {
-    back = back ^ 10 + (back << 2);
-    std::cout << "dummy1" << std::endl;
-}
-
-void dummy2() {
-    back = back % 10 + 20 - back & 6;
-    std::cout << "dummy2" << std::endl;
-}
+struct Dummy {
+    static int dummy;
+    static void dummy1() {
+        dummy += 10;
+        std::cout << "Dummy1" << std::endl;
+    }
+    static void dummy2() {
+        dummy *= 20;
+        std::cout << "Dummy2" << std::endl;
+    }
+};
+int Dummy::dummy = 0;
 
 int main() {
     using namespace obfs;
     using machine = StateMachine<
-        Stage<state1, Next<event5 , state2, dummy1>,
+        Stage<state1, Next<event5 , state2, Dummy::dummy1>,
                       Next<event1 , state3>>,
         Stage<state2, Next<event2 , state4>>,
         Stage<state3, Next<None   , state3>>,
         Stage<state4, Next<event4 , state1>,
-                      Next<event3 , state5, dummy2>>,
-        Stage<state5, Next<Trigger, Final, action>>>;
+                      Next<event3 , state5, Dummy::dummy2>>,
+        Stage<state5, Next<Trigger, Final, Action::action>>>;
 
     auto next1 = machine::run(state1{}, event5{});
     auto next2 = machine::run(next1, event2{});
