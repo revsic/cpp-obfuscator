@@ -15,15 +15,27 @@ void action() {
     std::cout << "Trigged" << std::endl;
 }
 
+int back = 0;
+
+void dummy1() {
+    back = back ^ 10 + (back << 2);
+    std::cout << "dummy1" << std::endl;
+}
+
+void dummy2() {
+    back = back % 10 + 20 - back & 6;
+    std::cout << "dummy2" << std::endl;
+}
+
 int main() {
     using namespace obfs;
     using machine = StateMachine<
-        Stage<state1, Next<event5 , state2>,
+        Stage<state1, Next<event5 , state2, dummy1>,
                       Next<event1 , state3>>,
         Stage<state2, Next<event2 , state4>>,
         Stage<state3, Next<None   , state3>>,
         Stage<state4, Next<event4 , state1>,
-                      Next<event3 , state5>>,
+                      Next<event3 , state5, dummy2>>,
         Stage<state5, Next<Trigger, Final, action>>>;
 
     auto next1 = machine::run(state1{}, event5{});
