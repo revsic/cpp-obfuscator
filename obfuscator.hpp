@@ -47,6 +47,8 @@ namespace obfs {
         using type = T;
         using next = TypeSeq<Ts...>;
 
+        constexpr static std::size_t size = 1 + sizeof...(Ts);
+
         template <std::size_t Idx>
         using index = std::conditional_t<Idx == 0, type, typename next::template index<Idx - 1>>;
     };
@@ -54,6 +56,8 @@ namespace obfs {
     template <typename T>
     struct TypeSeq<T> {
         using type = T;
+
+        constexpr static std::size_t size = 1;
 
         template <std::size_t Idx>
         using index = std::conditional_t<Idx == 0, type, Nothing>;
@@ -72,8 +76,7 @@ namespace obfs {
 
     template <typename... T>
     struct SeqPack {
-        constexpr static std::size_t size = sizeof...(T);
-        constexpr static std::size_t elem_size = MinVal<T::size...>::value;
+        constexpr static std::size_t size = MinVal<T::size...>::value;
 
         template <std::size_t Idx, typename U>
         using getter = typename U::template index<Idx>;
@@ -253,9 +256,15 @@ namespace obfs {
     template <typename EncoderSeq, typename DecoderSeq>
     using make_table = SeqPack<EncoderSeq, DecoderSeq>;
 
+    template <Encoder encoder, Decoder decoder>
+    using encoder_pair = Sequence<Encoder, encoder, decoder>;
+
+    template <typename... Seq>
+    using make_pair_table = TypeSeq<Seq...>;
+
     template <typename Table, std::size_t size>
-    constexpr auto make_string(char const (&str)[size]) {
-        using pair = typename Table::template index<MAKE_RAND_VAL(Table::elem_size)>;
+    constexpr auto make_string(char const(&str)[size]) {
+        using pair = typename Table::template index<MAKE_RAND_VAL(Table::size)>;
         constexpr Encoder encoder = pair::template index<0>::value;
         constexpr Decoder decoder = pair::template index<1>::value;
 
