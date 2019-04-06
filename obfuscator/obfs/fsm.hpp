@@ -71,7 +71,7 @@ namespace obfs {
         struct invoker {
             static auto action() {
                 State::action();
-                return State{};
+                return State::state{};
             }
         };
 
@@ -84,7 +84,7 @@ namespace obfs {
 
         template <typename State, typename Event>
         static auto run(State state, Event event) {
-            using next_state = next_t<State, Event>;
+            using next_state = next_t<std::decay_t<State>, std::decay_t<Event>>;
             return invoker<next_state>::action();
         }
     };
