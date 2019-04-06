@@ -30,6 +30,9 @@ struct Dummy {
         dummy *= 20;
         std::cout << "Dummy2" << std::endl;
     }
+    static void dummy3() {
+        std::exit(1);
+    }
 };
 int Dummy::dummy = 0;
 
@@ -37,7 +40,7 @@ int main() {
     using namespace obfs;
     using machine = StateMachine<
         Stage<state1, Next<event5 , state2, Dummy::dummy1>,
-                      Next<event1 , state3>>,
+                      Next<event1 , state3, Dummy::dummy3>>,
         Stage<state2, Next<event2 , state4>>,
         Stage<state3, Next<None   , state3>>,
         Stage<state4, Next<event4 , state1>,
