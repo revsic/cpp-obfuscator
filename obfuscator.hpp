@@ -7,7 +7,7 @@
 #define COMPILE_TIME_SEQUENCE
 #define OBFS_FINITE_STATE_MACHINE
 #define COMPILE_TIME_RANDOM
-#define MAKE_RAND_VAL(MOD) RAND_VAL<__LINE__, MOD>
+#define MAKE_RAND_VAL(MOD) obfs::RAND_VAL<__LINE__, MOD>
 #define OBFS_STRING
 #define MAKE_STRING(Var, String, ...) constexpr auto Var = obfs::make_string<__VA_ARGS__>(String);
 
